@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "description": "User's first name" },
+        "sobrenome": { "type": "string", "description": "User's last name" },
+        "telefone": { "type": "string", "description": "User's phone number" },
+        "email": { "type": "string", "description": "User's email address" },
+        "vendedor": { "type": "boolean", "description": "Whether the user is a seller" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["nome", "sobrenome", "email"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "description": { "type": "string" },
+        "paymentLink": { "type": "string" },
+        "category": { "type": "string" },
+        "comboWith": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "price", "image", "description", "paymentLink"]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Purchase record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "userName": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "price": { "type": "string" },
+        "status": { "type": "string", "enum": ["Aguardando pagamento", "Comprovante enviado", "Em produção", "Entregue"] },
+        "date": { "type": "string", "format": "date-time" },
+        "comprovanteUrl": { "type": "string" }
+      },
+      "required": ["userId", "productId", "productName", "price", "status", "date"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Product review",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["productId", "userId", "userName", "rating", "comment", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Store user profile details"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store product details"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "Purchase",
+      "description": "Store purchase records"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Store product reviews"
+    }
+  }
+}

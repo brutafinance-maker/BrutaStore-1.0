@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isVendedor() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.vendedor == true ||
+         request.auth.token.email == "matheusenge2@gmail.com");
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['nome', 'sobrenome', 'email']) &&
+             data.nome is string && data.nome.size() > 0 && data.nome.size() < 100 &&
+             data.sobrenome is string && data.sobrenome.size() > 0 && data.sobrenome.size() < 100 &&
+             data.email is string && data.email.matches('^.+@.+\\..+$');
+    }
+
+    function isValidPurchase(data) {
+      return data.keys().hasAll(['userId', 'productId', 'productName', 'price', 'status', 'date']) &&
+             (data.userId == request.auth.uid || isVendedor()) &&
+             data.status in ['Aguardando pagamento', 'Comprovante enviado', 'Em produção', 'Entregue'] &&
+             data.productName is string &&
+             data.price is string;
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'price', 'image', 'description', 'paymentLink']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.price is string &&
+             data.image is string &&
+             data.description is string &&
+             data.paymentLink is string;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['productId', 'userId', 'userName', 'rating', 'comment', 'date']) &&
+             data.userId == request.auth.uid &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() > 0;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isVendedor();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) || isVendedor();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isVendedor() && isValidProduct(request.resource.data);
+      allow update: if isVendedor() && isValidProduct(request.resource.data);
+      allow delete: if isVendedor();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isVendedor());
+      allow create: if isAuthenticated() && isValidPurchase(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isVendedor());
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidReview(request.resource.data);
+      allow delete: if isVendedor();
+    }
+  }
+}
